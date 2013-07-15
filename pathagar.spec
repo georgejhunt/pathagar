@@ -1,6 +1,6 @@
 Name:           pathagar
 Version:        0
-Release:        4
+Release:        5
 
 Summary:        Book Server
 
@@ -8,14 +8,12 @@ Group:          Applications/Archiving
 License:        GPLv2
 
 URL:            http://wiki.laptop.org
-%global         path1        git://github.com/johnsensible/django-sendfile.git
-%global         path2        git://github.com/PathagarBooks/pathagar
-%global         path3        git://github.com/FinalsClub/django-taggit
+%global         path1        git://github.com/PathagarBooks/pathagar
 
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildArch:     noarch
+BuildArch:     x86_64
 Requires:      yum
 Requires:       python
 Requires:       mod_wsgi
@@ -23,6 +21,8 @@ Requires:       python-setuptools
 Requires:       sqlite
 Requires:       Django
 BuildRequires: git
+BuildRequires: python-pip
+BuildRequires: python-virtualenv
 
 
 %description
@@ -33,16 +33,30 @@ This package contains the XS repository configuration.
 
 
 %build
+TARGET=/tmp/tree.$$
+mkdir -p $TARGET/pathagar
 
+# get the environment set up
+virtualenv $TARGET/pathagar
 
-%install
+# need place to put the git clone
+TFILE=/tmp/pathagargit.$$
+mkdir -p $TFILE
+cd $TFILE
+
+# git wants to clone into an empty directory
+git clone git://github.com/PathagarBooks/pathagar
+rm -rf ./pathagar/.git
+cp -rp $TFILE/pathagar/* $TARGET/pathagar
+rm -rf $TFILE
+
+cd $TARGET/pathagar
+$TARGET/pathagar/bin/pip install -r requirements.pip
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/%{python_sitelib}
-cd $RPM_BUILD_ROOT/%{python_sitelib}
-git clone %{path1}
-git clone %{path2}
-git clone %{path3}
-rm -rf */.git*
+mkdir -p $RPM_BUILD_ROOT/library/
+cp -rp $TARGET/pathagar $RPM_BUILD_ROOT/library
+
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -50,7 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%{python_sitelib}/*
+/library/pathagar
 
 
 %changelog
